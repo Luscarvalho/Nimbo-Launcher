@@ -1,0 +1,25 @@
+# Generated builds and local release artifacts
+/build/
+/releases/
+*.apk
+*.idsig
+
+# Signing keys, certificates with private keys and local credentials
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.key
+*.pem
+/signing.local.json
+.env
+.env.*
+!.env.example
+/local.properties
+
+# Editor and operating-system files
+.DS_Store
+__pycache__/
+*.pyc
+.idea/
+*.iml
