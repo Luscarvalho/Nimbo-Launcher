@@ -38,6 +38,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Map;
@@ -64,6 +65,8 @@ public class MainActivity extends Activity {
     private static final int ROW1_TOP = 770;
     // Unfocused cards stay slightly dimmed so the focused one stands out.
     private static final float UNFOCUSED_ALPHA = 0.72f;
+    // Ring color while an app is picked up for moving (brand lavender).
+    private static final int MOVE_COLOR = 0xFFCBC2EE;
     private float scale = 1f;
 
     private static Typeface regular, semibold, light;
@@ -72,6 +75,12 @@ public class MainActivity extends Activity {
     private FrameLayout appRow;
     private WallpaperController wallpaper;
     private final List<View> tiles = new ArrayList<>();
+    private final Map<View, GradientDrawable> tileRings = new HashMap<>();
+    private final Map<View, TextView> tileCaptions = new HashMap<>();
+    // Move mode: the picked-up app slides along the row with Left/Right until OK or Back.
+    private String movingKey;
+    private int moveArmedKey = KeyEvent.KEYCODE_UNKNOWN;
+    private TextView moveHint;
     private boolean dirty = true;
     private String focusedKey;
     private View settingsButton;
@@ -168,6 +177,11 @@ public class MainActivity extends Activity {
         int rowHeight = px(CARD_WIDTH) * 9 / 16 + 2 * px(FOCUS_INSET) + px(70);
         root.addView(appScroll, at(px(MARGIN - FOCUS_INSET), px(ROW1_TOP - FOCUS_INSET),
                 getResources().getDisplayMetrics().widthPixels - px(2 * MARGIN - 2 * FOCUS_INSET), rowHeight));
+
+        moveHint = text(px(26), 0xE6FFFFFF, regular);
+        moveHint.setText(getString(R.string.move_hint));
+        moveHint.setVisibility(View.GONE);
+        root.addView(moveHint, at(px(MARGIN), px(ROW1_TOP - 76), -2, -2));
 
         setContentView(root);
 
@@ -273,7 +287,9 @@ public class MainActivity extends Activity {
             open(pkg);
         }));
         items.add(new SettingsSidebar.Item(getString(R.string.move_app), getString(R.string.move_app_description), LineIcon.MOVE, () -> {
-            showMoveApp(pkg);
+            // The dismiss listener refocuses this app's card; move mode starts on that card.
+            sidebar.dismiss();
+            appRow.post(() -> startMove(pkg));
         }));
         items.add(new SettingsSidebar.Item(getString(R.string.hide_app), getString(R.string.hide_app_description), LineIcon.HIDDEN, () -> {
                     int oldIndex = 0;
@@ -325,24 +341,106 @@ public class MainActivity extends Activity {
         catch (android.content.ActivityNotFoundException | SecurityException ex) { openAppDetails(pkg); }
     }
 
-    private void showMoveApp(String pkg) {
-        List<String> current = appList();
-        List<SettingsSidebar.Item> positions = new ArrayList<>();
-        for (int i = 0; i < current.size(); i++) {
-            final int position = i;
-            String description = pkg.equals(current.get(i)) ? getString(R.string.current_position) : appName(current.get(i));
-            positions.add(new SettingsSidebar.Item(getString(R.string.app_position, i + 1), description, LineIcon.MOVE, () -> {
-                List<String> order = appList();
-                if (order.contains(pkg)) {
-                    order = AppOrder.move(order, pkg, position);
-                    saveAppOrder(order);
-                    focusedKey = pkg;
-                    buildTiles();
-                }
-                sidebar.dismiss();
-            }));
+    private View tileFor(String key) {
+        for (View tile : tiles) if (key.equals(tile.getTag())) return tile;
+        return null;
+    }
+
+    /** App cards come first in the row; the trailing "+" card never moves. */
+    private int appTileCount() {
+        int n = tiles.size();
+        return n > 0 && ADD_APPS.equals(tiles.get(n - 1).getTag()) ? n - 1 : n;
+    }
+
+    private void startMove(String pkg) {
+        View card = tileFor(pkg);
+        if (card == null || destroyed) return;
+        movingKey = pkg;
+        moveArmedKey = KeyEvent.KEYCODE_UNKNOWN;
+        card.requestFocus();
+        GradientDrawable ring = tileRings.get(card);
+        if (ring != null) ring.setStroke(px(6), MOVE_COLOR);
+        TextView caption = tileCaptions.get(card);
+        if (caption != null) {
+            caption.setText("‹   " + appName(pkg) + "   ›");
+            caption.setVisibility(View.VISIBLE);
         }
-        sidebar.showAppPage(appName(pkg), getString(R.string.choose_position), appIcon(pkg), positions);
+        ((View) card.getParent()).animate().translationY(-px(18)).setDuration(140).start();
+        moveHint.setVisibility(View.VISIBLE);
+    }
+
+    /** Slides the picked-up card one slot and animates every card that changed place. */
+    private void moveBy(View card, int direction) {
+        int count = appTileCount();
+        int from = tiles.indexOf(card);
+        int to = from + direction;
+        if (from < 0 || from >= count || to < 0 || to >= count) return;
+        Collections.swap(tiles, from, to);
+        int w = px(CARD_WIDTH), g = px(GAP), inset = px(FOCUS_INSET);
+        for (int k = 0; k < count; k++) {
+            View wrap = (View) tiles.get(k).getParent();
+            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) wrap.getLayoutParams();
+            int x = inset + k * (w + g);
+            if (lp.leftMargin == x) continue;
+            float visual = lp.leftMargin + wrap.getTranslationX();
+            lp.leftMargin = x;
+            wrap.setLayoutParams(lp);
+            wrap.setTranslationX(visual - x);
+            wrap.animate().translationX(0).setDuration(160).start();
+        }
+        // Keep the moving card visible once the new layout is in place.
+        View wrap = (View) card.getParent();
+        wrap.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+            @Override public void onLayoutChange(View v, int l, int t, int r, int b, int ol, int ot, int or, int ob) {
+                v.removeOnLayoutChangeListener(this);
+                int space = px(FOCUS_INSET);
+                card.requestRectangleOnScreen(new Rect(-space, -space, card.getWidth() + space, card.getHeight() + space), false);
+            }
+        });
+    }
+
+    /** Leaves move mode, saving the new order or restoring the previous one. */
+    private void endMove(boolean save) {
+        if (movingKey == null) return;
+        String key = movingKey;
+        if (save) {
+            List<String> order = new ArrayList<>();
+            for (int k = 0; k < appTileCount(); k++) order.add((String) tiles.get(k).getTag());
+            saveAppOrder(order);
+        }
+        movingKey = null;
+        focusedKey = key;
+        buildTiles();
+    }
+
+    /** Key handling while an app is picked up. Every key is consumed so focus cannot leave the card. */
+    private boolean handleMoveKey(View card, int code, KeyEvent event) {
+        boolean down = event.getAction() == KeyEvent.ACTION_DOWN;
+        switch (code) {
+            case KeyEvent.KEYCODE_DPAD_LEFT:
+            case KeyEvent.KEYCODE_DPAD_RIGHT:
+                if (down) moveBy(card, code == KeyEvent.KEYCODE_DPAD_LEFT ? -1 : 1);
+                return true;
+            case KeyEvent.KEYCODE_DPAD_CENTER:
+            case KeyEvent.KEYCODE_ENTER:
+            case KeyEvent.KEYCODE_NUMPAD_ENTER:
+            case KeyEvent.KEYCODE_BACK:
+                // Act on key-up only after a matching key-down here, so the OK that chose
+                // "Mover" in the menu cannot confirm the move by accident.
+                if (down) {
+                    if (event.getRepeatCount() == 0) moveArmedKey = code;
+                } else if (moveArmedKey == code && !event.isCanceled()) {
+                    moveArmedKey = KeyEvent.KEYCODE_UNKNOWN;
+                    endMove(code != KeyEvent.KEYCODE_BACK);
+                }
+                return true;
+            case KeyEvent.KEYCODE_DPAD_UP:
+            case KeyEvent.KEYCODE_DPAD_DOWN:
+            case KeyEvent.KEYCODE_MENU:
+                return true;
+            default:
+                return false; // volume and media keys keep working
+        }
     }
 
     private void saveAppOrder(List<String> apps) {
@@ -471,6 +569,7 @@ public class MainActivity extends Activity {
     protected void onPause() {
         resumed = false;
         main.removeCallbacks(refreshApps);
+        endMove(false); // leaving the Home (e.g. Home button) cancels an unfinished move
         wallpaper.setVisible(false);
         super.onPause();
     }
@@ -532,8 +631,13 @@ public class MainActivity extends Activity {
 
     private void buildTiles() {
         String restoreKey = focusedKey;
+        // A rebuild (package change, hide, confirm) always ends move mode.
+        movingKey = null;
+        moveHint.setVisibility(View.GONE);
         appRow.removeAllViews();
         tiles.clear();
+        tileRings.clear();
+        tileCaptions.clear();
 
         int g = px(GAP), w = px(CARD_WIDTH);
         int h = w * 9 / 16;
@@ -663,6 +767,7 @@ public class MainActivity extends Activity {
         card.setOnClickListener(v -> open(key));
         // Handle horizontal focus here so HorizontalScrollView cannot wrap/reset focus at an edge.
         card.setOnKeyListener((v, code, event) -> {
+            if (key.equals(movingKey)) return handleMoveKey(v, code, event);
             if (code != KeyEvent.KEYCODE_DPAD_LEFT && code != KeyEvent.KEYCODE_DPAD_RIGHT) return false;
             if (event.getAction() == KeyEvent.ACTION_DOWN) {
                 int current = tiles.indexOf(v);
@@ -692,6 +797,8 @@ public class MainActivity extends Activity {
         }
         appRow.addView(wrap, at(x, y, w, -2));
         tiles.add(card);
+        tileRings.put(card, ring);
+        if (caption != null) tileCaptions.put(card, caption);
     }
 
     private void open(String key) {

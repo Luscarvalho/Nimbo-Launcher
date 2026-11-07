@@ -7,7 +7,8 @@
     <string name="open_app">Abrir</string>
     <string name="open_app_description">Iniciar o aplicativo</string>
     <string name="move_app">Mover</string>
-    <string name="move_app_description">Escolher a posição na fileira</string>
+    <string name="move_app_description">Deslizar o app pela fileira com as setas</string>
+    <string name="move_hint">‹ › para mover   ·   OK confirma   ·   Voltar cancela</string>
     <string name="hide_app">Ocultar</string>
     <string name="hide_app_description">Retirar da Home, mantendo instalado</string>
     <string name="app_hidden">App ocultado da tela inicial</string>
@@ -19,8 +20,6 @@
     <string name="uninstall_app_description">Remover o aplicativo e seus dados</string>
     <string name="app_options">Opções do aplicativo</string>
     <string name="app_info_failed">Não foi possível abrir as informações do app</string>
-    <string name="current_position">Posição atual</string>
-    <string name="choose_position">Escolha a nova posição</string>
     <string name="add_to_home">Adicionar à tela inicial</string>
     <string name="add_apps">Adicionar aplicativos</string>
     <string name="no_hidden_apps">Nenhum aplicativo oculto. Segure OK em um app para ocultá-lo.</string>
@@ -75,7 +74,6 @@
     <string name="network_type_other">Rede</string>
     <string name="network_wifi_disconnected">Wi-Fi ligado, desconectado</string>
     <string name="network_wifi_off">Wi-Fi desligado</string>
-    <string name="app_position">%1$dª posição</string>
     <plurals name="images_more_status">
         <item quantity="one">Mostrando %1$d imagem. Use Carregar mais para ver as antigas.</item>
         <item quantity="other">Mostrando %1$d imagens. Use Carregar mais para ver as antigas.</item>

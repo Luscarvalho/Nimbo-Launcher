@@ -1,8 +1,12 @@
 > Registro histórico anterior à publicação no GitHub. Para instruções atuais, consulte o README e o guia DESENVOLVIMENTO.md na raiz.
 
-# Nimbo — versão 1.9.1
+# Nimbo — versão 1.9.2
 
 Launcher de Android TV com fileira de aplicativos, wallpapers locais e configuração pelo controle. Adaptação do [TV Detox](https://github.com/Ansub/tv-detox), de Ansub Khan, sob licença MIT preservada no código e no APK. Sem anúncios ou compras no app.
+
+## Mover direto na fileira — versão 1.9.2
+
+A opção Mover do menu por pressão longa não abre mais a lista de posições. O app é levantado na própria fileira, com contorno lilás e setas na legenda, e Esquerda/Direita o deslizam entre os outros apps com animação. OK salva a nova ordem; Voltar, o botão Início ou qualquer recarga da fileira cancelam e restauram a ordem anterior. O card + continua sempre no fim. Volume e teclas de mídia seguem funcionando durante a movimentação.
 
 ## Home mais legível — versão 1.9.1
 
