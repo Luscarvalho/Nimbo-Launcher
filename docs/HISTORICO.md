@@ -1,8 +1,14 @@
 > Registro histórico anterior à publicação no GitHub. Para instruções atuais, consulte o README e o guia DESENVOLVIMENTO.md na raiz.
 
-# Nimbo — versão 1.9.0
+# Nimbo — versão 1.9.1
 
 Launcher de Android TV com fileira de aplicativos, wallpapers locais e configuração pelo controle. Adaptação do [TV Detox](https://github.com/Ansub/tv-detox), de Ansub Khan, sob licença MIT preservada no código e no APK. Sem anúncios ou compras no app.
+
+## Home mais legível — versão 1.9.1
+
+O card em foco ganhou um contorno branco, e os demais ficam levemente esmaecidos, para destacar a seleção mesmo com banners claros. Os cards de apps cresceram cerca de 20% (344 px de largura no layout de 1920×1080), e a fileira subiu, porque o título Aplicativos foi removido. O card + ficou quadrado e mais discreto. O relógio passou a usar o peso leve da fonte.
+
+A interface continua renderizada em 1280×720 nesta TV: o limite vem de ro.surface_flinger.max_graphics_width/height, definido pelo fabricante, e não do Nimbo.
 
 ## Novo pacote — versão 1.9.0
 

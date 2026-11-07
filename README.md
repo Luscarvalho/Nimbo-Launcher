@@ -3,7 +3,7 @@
   <h1>Nimbo Launcher</h1>
   <p>Uma tela inicial simples para a sua Android TV.<br>Seus apps, seu wallpaper e o controle na mão.</p>
 
-  ![Versão 1.9.0](https://img.shields.io/badge/vers%C3%A3o-1.9.0-CBC2EE)
+  ![Versão 1.9.1](https://img.shields.io/badge/vers%C3%A3o-1.9.1-CBC2EE)
   ![Android 9 ou superior](https://img.shields.io/badge/Android-9%2B-3DDC84?logo=android&logoColor=white)
   ![Java nativo](https://img.shields.io/badge/Java-nativo-ED8B00)
   [![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue)](LICENSE)

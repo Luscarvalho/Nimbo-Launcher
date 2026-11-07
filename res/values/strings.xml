@@ -25,7 +25,6 @@
     <string name="add_apps">Adicionar aplicativos</string>
     <string name="no_hidden_apps">Nenhum aplicativo oculto. Segure OK em um app para ocultá-lo.</string>
     <string name="choose_hidden_app">Escolha um app oculto para adicionar à tela inicial</string>
-    <string name="applications">Aplicativos</string>
     <string name="apps_refresh_failed">Não foi possível atualizar os aplicativos. Tente voltar à Home.</string>
     <string name="settings">Configurações</string>
     <string name="tv_settings">Configurações da TV</string>

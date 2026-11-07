@@ -58,17 +58,18 @@ public class MainActivity extends Activity {
     private static final int MAX_INPUTS = 4;
 
     // Layout is designed at 1920x1080 and scaled to the TV's real UI size by px().
-    private static final int MARGIN = 96, GAP = 24, RADIUS = 22, CARD_WIDTH = 288;
+    private static final int MARGIN = 96, GAP = 28, RADIUS = 24, CARD_WIDTH = 344;
     // Covers both the 10% zoom and the elevation shadow at the ends of the shelf.
     private static final int FOCUS_INSET = 64;
-    private static final int ROW1_TOP = 810;
+    private static final int ROW1_TOP = 770;
+    // Unfocused cards stay slightly dimmed so the focused one stands out.
+    private static final float UNFOCUSED_ALPHA = 0.72f;
     private float scale = 1f;
 
-    private static Typeface regular, semibold;
+    private static Typeface regular, semibold, light;
 
     private FrameLayout root;
     private FrameLayout appRow;
-    private TextView appsLabel;
     private WallpaperController wallpaper;
     private final List<View> tiles = new ArrayList<>();
     private boolean dirty = true;
@@ -121,8 +122,8 @@ public class MainActivity extends Activity {
         LinearLayout clockGroup = new LinearLayout(this);
         clockGroup.setOrientation(LinearLayout.VERTICAL);
         TextClock date = clock("EEEE, d MMMM", "EEEE, d MMMM", px(30), 0xA8FFFFFF, regular);
-        TextClock time = clock("h:mm", "H:mm", px(176), Color.WHITE, semibold);
-        time.setLetterSpacing(-0.028f);
+        TextClock time = clock("h:mm", "H:mm", px(168), Color.WHITE, light);
+        time.setLetterSpacing(-0.02f);
         time.setFontFeatureSettings("tnum");
         time.setIncludeFontPadding(false);
         clockGroup.addView(date, new LinearLayout.LayoutParams(-2, -2));
@@ -153,10 +154,6 @@ public class MainActivity extends Activity {
         networkPosition.topMargin = px(64);
         networkPosition.rightMargin = px(MARGIN + 88);
         root.addView(networkStatus, networkPosition);
-
-        appsLabel = text(px(27), 0xCDFFFFFF, regular);
-        appsLabel.setText(getString(R.string.applications));
-        root.addView(appsLabel, at(px(MARGIN), px(ROW1_TOP - 62), -2, -2));
 
         HorizontalScrollView appScroll = new HorizontalScrollView(this);
         appScroll.setHorizontalScrollBarEnabled(false);
@@ -544,7 +541,8 @@ public class MainActivity extends Activity {
         int col = 0;
         List<String> apps = appList();
         int inset = px(FOCUS_INSET);
-        int contentWidth = (apps.size() + 1) * w + apps.size() * g + 2 * inset;
+        // The "+" card is square (h x h) so it reads as secondary to the app banners.
+        int contentWidth = apps.size() * w + h + apps.size() * g + 2 * inset;
         int contentHeight = h + 2 * inset + px(70);
         // HorizontalScrollView measures its child with an unconstrained width. LayoutParams alone
         // do not reserve the trailing space: include real padding and a minimum measured size.
@@ -560,7 +558,7 @@ public class MainActivity extends Activity {
             addTile(pkg, entry.label, banner, null, appIcon(pkg), inset + col * (w + g), inset, w, h);
             col++;
         }
-        addTile(ADD_APPS, getString(R.string.add_apps), null, LineIcon.PLUS, null, inset + col * (w + g), inset, w, h);
+        addTile(ADD_APPS, getString(R.string.add_apps), null, LineIcon.PLUS, null, inset + col * (w + g), inset, h, h);
 
         // Explicit links make the upper-right button reachable from every app.
         for (int n = 0; n < tiles.size(); n++) {
@@ -599,7 +597,7 @@ public class MainActivity extends Activity {
             card.addView(iv, new FrameLayout.LayoutParams(-1, -1));
         } else {
             // Quiet "glass" tile: icon above label.
-            bg.setColor(0x13FFFFFF);
+            bg.setColor(0x0DFFFFFF);
             bg.setStroke(Math.max(1, px(2)), 0x17FFFFFF);
             LinearLayout inner = new LinearLayout(this);
             inner.setOrientation(LinearLayout.VERTICAL);
@@ -623,6 +621,12 @@ public class MainActivity extends Activity {
             card.addView(inner, new FrameLayout.LayoutParams(-1, -1));
         }
         card.setBackground(bg);
+        // Focus ring drawn above the banner; transparent while the card is not focused.
+        final GradientDrawable ring = new GradientDrawable();
+        ring.setCornerRadius(px(RADIUS));
+        ring.setStroke(px(6), 0x00FFFFFF);
+        card.setForeground(ring);
+        card.setAlpha(UNFOCUSED_ALPHA);
         card.setClipToOutline(true);
         card.setFocusable(true);
         card.setId(View.generateViewId());
@@ -650,9 +654,10 @@ public class MainActivity extends Activity {
                     }
                 });
             }
-            if (glass) bg.setColor(has ? 0x38FFFFFF : 0x13FFFFFF);
+            if (glass) bg.setColor(has ? 0x38FFFFFF : 0x0DFFFFFF);
+            ring.setStroke(px(6), has ? 0xF2FFFFFF : 0x00FFFFFF);
             v.animate().scaleX(has ? 1.1f : 1f).scaleY(has ? 1.1f : 1f).translationZ(has ? px(26) : 0)
-                    .setDuration(140).withLayer().start();
+                    .alpha(has ? 1f : UNFOCUSED_ALPHA).setDuration(140).withLayer().start();
             if (caption != null) caption.setVisibility(has ? View.VISIBLE : View.INVISIBLE);
         });
         card.setOnClickListener(v -> open(key));
@@ -742,6 +747,7 @@ public class MainActivity extends Activity {
         if (regular != null) return;
         regular = fromFile("/system/fonts/MILanPro_Normal.ttf", Typeface.create("sans-serif", Typeface.NORMAL));
         semibold = fromFile("/system/fonts/MILanPro_SemiBold.ttf", Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        light = fromFile("/system/fonts/MILanPro_Light.ttf", Typeface.create("sans-serif-light", Typeface.NORMAL));
     }
 
     private static Typeface fromFile(String path, Typeface fallback) {

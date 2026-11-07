@@ -1,6 +1,6 @@
 # Desenvolver o Nimbo
 
-O pacote atual é `com.nimbo.launcher`. A versão **1.9.0** usa `versionCode` **24**. O código é Java nativo, com recursos Android e um script de compilação em Python; não há projeto Gradle.
+O pacote atual é `com.nimbo.launcher`. A versão **1.9.1** usa `versionCode` **25**. O código é Java nativo, com recursos Android e um script de compilação em Python; não há projeto Gradle.
 
 ## Preparar o ambiente
 
